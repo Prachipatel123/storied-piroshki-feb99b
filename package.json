@@ -1,0 +1,23 @@
+{
+  "name": "nidhi-yakin-baby-shower",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "drizzle-orm": "^1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.0.2",
+    "@types/node": "^26.6.4",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2"
+  }
+}

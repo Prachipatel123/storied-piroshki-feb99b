@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>RSVPs · Nidhi &amp; Yakin's Baby Shower</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <script type="module" src="/src/host.ts"></script>
+  </head>
+  <body class="host">
+    <main class="host-main">
+      <header class="host-head">
+        <p class="eyebrow">Host dashboard</p>
+        <h1 class="host-title">Baby shower RSVPs</h1>
+      </header>
+
+      <section id="login" class="card login" aria-labelledby="login-title">
+        <h2 id="login-title">Welcome, Nidhi &amp; Yakin</h2>
+        <p class="hint">Enter the host password to see your guest list.</p>
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="password">Host password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required aria-required="true" aria-describedby="password-error" />
+            <p class="error" id="password-error" role="alert"></p>
+          </div>
+          <button type="submit" class="submit" id="login-btn"><span class="submit-label">View RSVPs</span><span class="spinner" aria-hidden="true"></span></button>
+        </form>
+      </section>
+
+      <section id="dashboard" hidden aria-labelledby="summary-title">
+        <h2 id="summary-title" class="visually-hidden">Summary</h2>
+        <ul class="stats" id="stats"></ul>
+
+        <div class="toolbar">
+          <button type="button" class="pill" id="refresh">Refresh</button>
+          <button type="button" class="pill" id="export">Download CSV</button>
+          <button type="button" class="pill pill--ghost" id="logout">Log out</button>
+        </div>
+
+        <div class="card table-card">
+          <p id="empty" class="empty" hidden>No RSVPs yet. Share the invitation link and replies will appear here.</p>
+          <div class="table-wrap" tabindex="0" role="region" aria-label="RSVP list (scrollable)">
+            <table id="table">
+              <caption class="visually-hidden">All RSVPs, newest first</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Guests</th>
+                  <th scope="col">Adults</th>
+                  <th scope="col">Children</th>
+                  <th scope="col">Attendees</th>
+                  <th scope="col">Contact</th>
+                  <th scope="col">Comments</th>
+                  <th scope="col">Received</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
