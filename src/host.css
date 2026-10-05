@@ -33,7 +33,7 @@ tbody tr:hover { background: #fffaf7; }
 td.strong { font-weight: 700; }
 td.num { text-align: center; font-variant-numeric: tabular-nums; }
 td.wrap { white-space: pre-line; min-width: 12rem; max-width: 22rem; }
-td.nowrap { white-space: nowrap; color: var(--muted); }
+td.nowrap { white-space: pre; color: var(--muted); }
 .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 800; white-space: nowrap; }
 .badge--yes { background: var(--sage-soft); color: var(--ok); }
 .badge--no { background: var(--blush-soft); color: var(--rose-deep); }

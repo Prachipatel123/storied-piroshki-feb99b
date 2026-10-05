@@ -5,8 +5,8 @@ A one-page invitation for Nidhi and Yakin's baby shower (Sunday, 15 November 202
 ## Features
 
 - **Invitation page (`/`)**: event details, a Google Maps link to the venue, and the RSVP deadline (19 October 2026).
-- **RSVP form**: name and email (required when attending), optional phone, a guest-count dropdown (1–10 or "Sorry, I can't make it"), Adults/Children dropdowns that must add up to the guest count, optional attendee names, and optional comments. The same rules are checked in the browser and on the server.
-- **Confirmation email**: attending guests get an email with the event details (sent through [Resend](https://resend.com)).
+- **RSVP form**: name, phone number (required, one RSVP per number), a "Yes, I'll be there!" / "Sorry, I can't make it" choice, plus/minus steppers for adults and children (up to 10 guests in total), optional attendee names, and optional comments. The same rules are checked in the browser and on the server.
+- **Changing an RSVP**: guests who have already replied can look up their RSVP by phone number and update it.
 - **Host dashboard (`/host`)**: password-protected list of every RSVP with totals (guests, adults, children, declines) and CSV export.
 
 ## Tech
@@ -14,7 +14,6 @@ A one-page invitation for Nidhi and Yakin's baby shower (Sunday, 15 November 202
 - Vite + TypeScript (no framework) for the static pages
 - Netlify Functions for the API (`/api/rsvp`, `/api/host/rsvps`)
 - Netlify Database (managed Postgres) with Drizzle ORM
-- Resend HTTP API for confirmation emails
 
 ## Environment variables
 
@@ -23,11 +22,7 @@ Set these in **Netlify → Project configuration → Environment variables**, th
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `HOST_PASSWORD` | Yes, for `/host` | Password for the host dashboard. Until it's set, `/host` explains that it isn't configured yet. |
-| `RESEND_API_KEY` | Yes, for emails | API key from resend.com. |
-| `RSVP_FROM_EMAIL` | Yes, for emails | Sender, e.g. `Nidhi & Yakin <rsvp@yourdomain.com>`. The domain must be verified in Resend. |
-| `RSVP_REPLY_TO_EMAIL` | No | Where guest replies to the confirmation email go. |
 
-If the email variables are missing or sending fails, the RSVP is still saved. The guest sees a confirmation on screen, and the host dashboard marks the confirmation email as "not sent".
 
 ## Run locally
 

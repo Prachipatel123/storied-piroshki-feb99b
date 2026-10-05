@@ -1,13 +1,14 @@
 import "./styles.css";
 import { EVENT, MAX_GUESTS } from "../shared/event.js";
-import { validateRsvp, type RsvpErrors, type RsvpInput } from "../shared/rsvp.js";
+import { validatePhone, validateRsvp, type RsvpErrors, type RsvpInput } from "../shared/rsvp.js";
 
-const NOT_ATTENDING = "none";
 const FIELD_ORDER: (keyof RsvpInput)[] = [
-  "name", "email", "phone", "guestCount", "adults", "children", "attendeeNames", "comments",
+  "name", "phone", "attending", "adults", "children", "guestCount", "attendeeNames", "comments",
 ];
+/** Where to send focus for errors that don't belong to a single input. */
+const FOCUS_TARGET: Partial<Record<keyof RsvpInput, string>> = { attending: "attending-yes", guestCount: "adults" };
 const FIELD_LABELS: Record<keyof RsvpInput, string> = {
-  name: "Your name", email: "Email", phone: "Phone", attending: "Attendance", guestCount: "Number of guests",
+  name: "Your name", phone: "Phone number", attending: "Attendance", guestCount: "Number of guests",
   adults: "Adults", children: "Children", attendeeNames: "Names of attendees", comments: "Comments",
 };
 
@@ -16,102 +17,100 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 const form = $<HTMLFormElement>("rsvp-form");
 const formView = $<HTMLDivElement>("form-view");
 const successView = $<HTMLDivElement>("success-view");
-const guestCount = $<HTMLSelectElement>("guestCount");
-const adults = $<HTMLSelectElement>("adults");
-const children = $<HTMLSelectElement>("children");
+const adults = $<HTMLInputElement>("adults");
+const children = $<HTMLInputElement>("children");
 const party = $<HTMLFieldSetElement>("party");
 const tally = $<HTMLParagraphElement>("tally");
-const email = $<HTMLInputElement>("email");
+const phone = $<HTMLInputElement>("phone");
 const summary = $<HTMLDivElement>("error-summary");
-const submitError = $<HTMLParagraphElement>("submit-error");
+const submitError = $<HTMLDivElement>("submit-error");
+const submitErrorText = $<HTMLParagraphElement>("submit-error-text");
+const duplicateChange = $<HTMLButtonElement>("duplicate-change");
 const submitBtn = $<HTMLButtonElement>("submit");
+const changeOpen = $<HTMLButtonElement>("change-open");
+const changeIntro = $<HTMLParagraphElement>("change-intro");
+const lookupForm = $<HTMLFormElement>("lookup-form");
+const lookupPhone = $<HTMLInputElement>("lookupPhone");
+const lookupError = $<HTMLParagraphElement>("lookupPhone-error");
+const lookupBtn = $<HTMLButtonElement>("lookup-submit");
+const editingBanner = $<HTMLDivElement>("editing-banner");
 
 let attempted = false;
+/** True while the guest is changing a reply they already sent (saved with PUT instead of POST). */
+let editing = false;
+/** Phone number of the last saved reply, so the success screen can offer to change it. */
+let lastPhone = "";
 
-function option(value: string, label: string) {
-  const o = document.createElement("option");
-  o.value = value;
-  o.textContent = label;
-  return o;
-}
+const attendingChoice = () =>
+  (form.querySelector<HTMLInputElement>('input[name="attending"]:checked')?.value ?? "") as "yes" | "no" | "";
 
-for (let n = 1; n <= MAX_GUESTS; n++) guestCount.append(option(String(n), `${n} guest${n === 1 ? "" : "s"}`));
-guestCount.append(option(NOT_ATTENDING, "Sorry, I can't make it"));
-
-/** Rebuilds an Adults/Children dropdown with 0…max, keeping the previous choice when still valid. */
-function fillCount(select: HTMLSelectElement, max: number) {
-  const prev = select.value;
-  select.replaceChildren(option("", "Choose…"));
-  for (let n = 0; n <= max; n++) select.append(option(String(n), String(n)));
-  if (prev !== "" && Number(prev) <= max) select.value = prev;
-}
+/** Reads a stepper's number, treating anything unusable as 0. */
+const count = (input: HTMLInputElement) => {
+  const n = Number.parseInt(input.value, 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 
 function readForm(): RsvpInput {
   const data = new FormData(form);
   const s = (k: string) => String(data.get(k) ?? "");
-  const count = guestCount.value;
-  const attending = count !== NOT_ATTENDING;
-  const toNum = (v: string) => (v === "" ? Number.NaN : Number(v));
+  const attending = attendingChoice() === "yes";
+  const a = attending ? count(adults) : 0;
+  const c = attending ? count(children) : 0;
   return {
     name: s("name").trim(),
-    email: s("email").trim(),
     phone: s("phone").trim(),
     attending,
-    guestCount: attending ? toNum(count) : 0,
-    adults: attending ? toNum(adults.value) : 0,
-    children: attending ? toNum(children.value) : 0,
+    guestCount: a + c,
+    adults: a,
+    children: c,
     attendeeNames: attending ? s("attendeeNames").trim() : "",
     comments: s("comments").trim(),
   };
 }
 
-function updateTally() {
-  const total = Number(guestCount.value);
-  if (!total) return void (tally.textContent = "");
-  const a = adults.value === "" ? null : Number(adults.value);
-  const c = children.value === "" ? null : Number(children.value);
-  tally.classList.remove("tally--ok", "tally--off");
-  if (a === null || c === null) {
-    tally.textContent = `Choose adults and children so they add up to ${total}.`;
-    return;
-  }
-  const sum = a + c;
-  if (sum === total) {
-    tally.textContent = `✓ ${a} adult${a === 1 ? "" : "s"} + ${c} child${c === 1 ? "" : "ren"} = ${total} guest${total === 1 ? "" : "s"}`;
-    tally.classList.add("tally--ok");
-  } else {
-    tally.textContent = `${a} + ${c} = ${sum}, which doesn't match ${total} guest${total === 1 ? "" : "s"}. Please adjust.`;
-    tally.classList.add("tally--off");
-  }
+/** Shared validation, plus the one check only the form needs: that an attendance choice was made. */
+function validateForm(): RsvpErrors {
+  const errors = validateRsvp(readForm());
+  if (!attendingChoice()) errors.attending = "Please let us know whether you can make it.";
+  return errors;
 }
 
-function onGuestCountChange() {
-  const value = guestCount.value;
-  const attending = value !== NOT_ATTENDING;
-  const total = Number(value);
-
-  party.hidden = !(attending && total > 0);
-  if (!party.hidden) {
-    fillCount(adults, total);
-    fillCount(children, total);
+/** Keeps each stepper within 0 and the room left under MAX_GUESTS, and updates the +/− buttons. */
+function syncSteppers() {
+  for (const input of [adults, children]) {
+    const other = input === adults ? children : adults;
+    const max = MAX_GUESTS - count(other);
+    const value = Math.min(count(input), max);
+    if (input.value !== String(value)) input.value = String(value);
+    input.max = String(max);
   }
-
-  // Email is only required for attending guests, since it's used for the confirmation.
-  const emailRequired = value === "" || attending;
-  email.required = emailRequired;
-  email.setAttribute("aria-required", String(emailRequired));
-  $("email-req").hidden = !emailRequired;
-  $("email-opt").hidden = emailRequired;
-  $("email-help").textContent = emailRequired
-    ? "We'll email you a confirmation with the event details."
-    : "Optional, in case we'd like to send you a note.";
-
+  const total = count(adults) + count(children);
+  for (const btn of form.querySelectorAll<HTMLButtonElement>(".step")) {
+    const value = count($<HTMLInputElement>(btn.dataset.target!));
+    btn.disabled = Number(btn.dataset.delta) < 0 ? value <= 0 : total >= MAX_GUESTS;
+  }
   updateTally();
+}
+
+function updateTally() {
+  const a = count(adults);
+  const c = count(children);
+  const total = a + c;
+  tally.classList.toggle("tally--ok", total > 0);
+  tally.textContent = total
+    ? `${total} guest${total === 1 ? "" : "s"} in total: ${a} adult${a === 1 ? "" : "s"} + ${c} child${c === 1 ? "" : "ren"}`
+    : "Please add at least one guest.";
+  if (total >= MAX_GUESTS) tally.textContent += ` (up to ${MAX_GUESTS} per RSVP)`;
+}
+
+function onAttendingChange() {
+  party.hidden = attendingChoice() !== "yes";
+  syncSteppers();
 }
 
 function showErrors(errors: RsvpErrors) {
   for (const key of FIELD_ORDER) {
-    const el = document.getElementById(key) as HTMLInputElement | null;
+    const el = document.getElementById(FOCUS_TARGET[key] ?? key) as HTMLInputElement | null;
     const msg = document.getElementById(`${key}-error`);
     if (!el || !msg) continue;
     const text = errors[key] ?? "";
@@ -133,7 +132,7 @@ function showSummary(errors: RsvpErrors) {
     a.textContent = `${FIELD_LABELS[key]}: ${text}`;
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      document.getElementById(key)?.focus();
+      document.getElementById(FOCUS_TARGET[key] ?? key)?.focus();
     });
     li.append(a);
     list.append(li);
@@ -143,16 +142,28 @@ function showSummary(errors: RsvpErrors) {
 
 function revalidate() {
   if (!attempted) return;
-  const errors = validateRsvp(readForm());
+  const errors = validateForm();
   showErrors(errors);
   if (!summary.hidden) showSummary(errors);
 }
 
-guestCount.addEventListener("change", () => { onGuestCountChange(); revalidate(); });
-for (const sel of [adults, children]) sel.addEventListener("change", () => { updateTally(); revalidate(); });
+for (const radio of form.querySelectorAll('input[name="attending"]')) {
+  radio.addEventListener("change", () => { onAttendingChange(); revalidate(); });
+}
+for (const btn of form.querySelectorAll<HTMLButtonElement>(".step")) {
+  btn.addEventListener("click", () => {
+    const input = $<HTMLInputElement>(btn.dataset.target!);
+    input.value = String(count(input) + Number(btn.dataset.delta));
+    syncSteppers();
+    revalidate();
+    // Keep focus usable when a button becomes disabled at 0 or at the guest limit.
+    if (btn.disabled) input.focus();
+  });
+}
+for (const input of [adults, children]) input.addEventListener("input", syncSteppers);
 form.addEventListener("input", revalidate);
 // Validate individual fields as people leave them, so mistakes surface early but not while typing.
-for (const id of ["name", "email", "phone"] as const) {
+for (const id of ["name", "phone"] as const) {
   $(id).addEventListener("blur", () => {
     const input = $<HTMLInputElement>(id);
     if (!input.value.trim() && !attempted) return;
@@ -166,9 +177,132 @@ for (const id of ["name", "email", "phone"] as const) {
 function setBusy(busy: boolean) {
   submitBtn.disabled = busy;
   submitBtn.classList.toggle("is-busy", busy);
-  submitBtn.querySelector(".submit-label")!.textContent = busy ? "Sending your RSVP…" : "Submit RSVP";
+  submitBtn.querySelector(".submit-label")!.textContent = busy
+    ? (editing ? "Saving your changes…" : "Sending your RSVP…")
+    : (editing ? "Save changes" : "Submit RSVP");
   form.setAttribute("aria-busy", String(busy));
 }
+
+function showSubmitError(text: string, offerChange = false) {
+  submitErrorText.textContent = text;
+  duplicateChange.hidden = !offerChange;
+  submitError.hidden = false;
+}
+
+/** Switches the form between "new RSVP" and "changing an existing RSVP". */
+function setEditing(on: boolean) {
+  editing = on;
+  editingBanner.hidden = !on;
+  changeIntro.hidden = on;
+  lookupForm.hidden = true;
+  changeOpen.setAttribute("aria-expanded", "false");
+  // The phone number identifies the reply being changed, so it can't be edited here.
+  phone.readOnly = on;
+  $("phone-help").textContent = on
+    ? "This is the number your RSVP is saved under."
+    : "We use this to find your RSVP if you need to change it later, and to reach you on the day.";
+  $("rsvp-title").textContent = on ? "Change your RSVP" : "Will you celebrate with us?";
+  setBusy(false);
+}
+
+function resetForm() {
+  form.reset();
+  attempted = false;
+  showErrors({});
+  summary.hidden = true;
+  submitError.hidden = true;
+  onAttendingChange();
+}
+
+interface SavedRsvp {
+  name: string;
+  phone: string;
+  attending: boolean;
+  guestCount: number;
+  adults: number;
+  children: number;
+  attendeeNames: string | null;
+  comments: string | null;
+}
+
+function fillForm(r: SavedRsvp) {
+  resetForm();
+  $<HTMLInputElement>("name").value = r.name;
+  phone.value = r.phone;
+  $<HTMLInputElement>(r.attending ? "attending-yes" : "attending-no").checked = true;
+  if (r.attending) {
+    adults.value = String(r.adults);
+    children.value = String(r.children);
+    $<HTMLTextAreaElement>("attendeeNames").value = r.attendeeNames ?? "";
+  }
+  $<HTMLTextAreaElement>("comments").value = r.comments ?? "";
+  onAttendingChange();
+}
+
+/** Loads a saved reply by phone number into the form. Returns an error message, or "" on success. */
+async function loadForEdit(number: string): Promise<string> {
+  const err = validatePhone(number);
+  if (err) return err;
+  try {
+    const res = await fetch("/api/rsvp/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: number }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 404) return "We couldn't find an RSVP for that number. Please check it, or fill in the form below to RSVP.";
+    if (!res.ok) return body.error || "Something went wrong. Please try again.";
+    fillForm(body.rsvp);
+    setEditing(true);
+    successView.hidden = true;
+    formView.hidden = false;
+    $("rsvp").scrollIntoView({ block: "start" });
+    $("name").focus();
+    return "";
+  } catch {
+    return "We couldn't reach the server just now. Please check your connection and try again.";
+  }
+}
+
+changeOpen.addEventListener("click", () => {
+  const open = lookupForm.hidden;
+  lookupForm.hidden = !open;
+  changeOpen.setAttribute("aria-expanded", String(open));
+  if (open) {
+    if (!lookupPhone.value && phone.value) lookupPhone.value = phone.value;
+    lookupPhone.focus();
+  }
+});
+
+lookupForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  lookupBtn.disabled = true;
+  lookupBtn.textContent = "Finding…";
+  const err = await loadForEdit(lookupPhone.value.trim());
+  lookupBtn.disabled = false;
+  lookupBtn.textContent = "Find my RSVP";
+  lookupError.textContent = err;
+  if (err) {
+    lookupPhone.setAttribute("aria-invalid", "true");
+    lookupPhone.focus();
+  } else {
+    lookupPhone.removeAttribute("aria-invalid");
+    lookupPhone.value = "";
+  }
+});
+
+duplicateChange.addEventListener("click", async () => {
+  duplicateChange.disabled = true;
+  const err = await loadForEdit(phone.value.trim());
+  duplicateChange.disabled = false;
+  if (err) showSubmitError(err);
+});
+
+$("edit-cancel").addEventListener("click", () => {
+  resetForm();
+  setEditing(false);
+  $("name").focus();
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -176,7 +310,7 @@ form.addEventListener("submit", async (e) => {
   submitError.hidden = true;
 
   const input = readForm();
-  const errors = validateRsvp(input);
+  const errors = validateForm();
   showErrors(errors);
   if (Object.keys(errors).length > 0) {
     showSummary(errors);
@@ -188,7 +322,7 @@ form.addEventListener("submit", async (e) => {
   setBusy(true);
   try {
     const res = await fetch("/api/rsvp", {
-      method: "POST",
+      method: editing ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
@@ -199,29 +333,39 @@ form.addEventListener("submit", async (e) => {
       summary.focus();
       return;
     }
+    if (res.status === 409 && body.code === "duplicate") {
+      showErrors(body.errors ?? {});
+      showSubmitError(
+        "Looks like you've already sent an RSVP with this phone number. Would you like to change it instead?",
+        true,
+      );
+      duplicateChange.focus();
+      return;
+    }
+    if (res.status === 404 && editing) {
+      showSubmitError("We couldn't find your earlier RSVP any more. Please cancel and submit a new RSVP.");
+      return;
+    }
     if (!res.ok) throw new Error(body.error || "Request failed");
-    showSuccess(input, Boolean(body.emailSent));
+    showSuccess(input, editing);
   } catch {
-    submitError.textContent =
-      "Oh no, we couldn't send your RSVP just now. Please check your connection and try again.";
-    submitError.hidden = false;
+    showSubmitError("Oh no, we couldn't send your RSVP just now. Please check your connection and try again.");
   } finally {
     setBusy(false);
   }
 });
 
-function showSuccess(input: RsvpInput, emailSent: boolean) {
+function showSuccess(input: RsvpInput, updated: boolean) {
+  lastPhone = input.phone;
   const firstName = input.name.split(/\s+/)[0];
   const title = $("success-title");
   const message = $("success-message");
   if (input.attending) {
-    title.textContent = `Yay, thank you ${firstName}! 🎉`;
+    title.textContent = updated ? `All updated, ${firstName}!` : `Yay, thank you ${firstName}!`;
     const partyLabel = `${input.guestCount} guest${input.guestCount === 1 ? "" : "s"}`;
-    message.textContent = emailSent
-      ? `Your RSVP for ${partyLabel} is confirmed. We've sent the details to ${input.email}. We can't wait to celebrate with you on ${EVENT.dateLabel}!`
-      : `Your RSVP for ${partyLabel} is confirmed. We can't wait to celebrate with you on ${EVENT.dateLabel}, ${EVENT.timeLabel}, at ${EVENT.venue}!`;
+    message.textContent = `Your RSVP for ${partyLabel} is ${updated ? "updated" : "confirmed"}. We can't wait to celebrate with you on ${EVENT.dateLabel}, ${EVENT.timeLabel}, at ${EVENT.venue}!`;
   } else {
-    title.textContent = `Thank you for letting us know, ${firstName}`;
+    title.textContent = updated ? `Your RSVP is updated, ${firstName}` : `Thank you for letting us know, ${firstName}`;
     message.textContent = "We'll miss you at the shower, and we're so grateful for your love and good wishes. ♡";
   }
   formView.hidden = true;
@@ -230,15 +374,23 @@ function showSuccess(input: RsvpInput, emailSent: boolean) {
   title.focus();
 }
 
+$("change-this").addEventListener("click", async () => {
+  const btn = $<HTMLButtonElement>("change-this");
+  btn.disabled = true;
+  const err = await loadForEdit(lastPhone);
+  btn.disabled = false;
+  if (err) {
+    $("success-message").textContent = err;
+    btn.focus();
+  }
+});
+
 $("again").addEventListener("click", () => {
-  form.reset();
-  attempted = false;
-  showErrors({});
-  summary.hidden = true;
-  onGuestCountChange();
+  resetForm();
+  setEditing(false);
   successView.hidden = true;
   formView.hidden = false;
   $("name").focus();
 });
 
-onGuestCountChange();
+onAttendingChange();

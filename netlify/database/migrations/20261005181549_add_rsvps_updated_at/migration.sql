@@ -1,0 +1,1 @@
+ALTER TABLE "rsvps" ADD COLUMN "updated_at" timestamp with time zone;

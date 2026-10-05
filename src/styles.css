@@ -300,6 +300,49 @@ input:focus, select:focus, textarea:focus {
 .party legend + * { clear: both; }
 @keyframes unfold { from { opacity: 0; transform: translateY(-8px); } }
 
+.attending { margin: 0 0 1.15rem; padding: 0; border: 0; min-width: 0; }
+.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.choice {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 56px;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e4cfd6;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.choice:hover { border-color: #d6aebb; }
+.choice input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
+.choice:has(input:checked) { border-color: var(--rose); background: var(--blush-soft); color: var(--rose-deep); }
+.choice:has(input:focus-visible) { box-shadow: 0 0 0 4px rgba(176, 96, 122, 0.25); border-color: var(--rose); }
+.attending:has([aria-invalid="true"]) .choice { border-color: var(--error); }
+
+.stepper { display: flex; align-items: center; gap: 0.5rem; }
+.stepper input {
+  flex: 1; min-width: 0;
+  text-align: center;
+  font-weight: 800; font-size: 1.15rem;
+  -moz-appearance: textfield;
+}
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.step {
+  flex: none;
+  width: 48px; height: 48px;
+  border: 0;
+  border-radius: 50%;
+  font: inherit; font-size: 1.5rem; font-weight: 800; line-height: 1;
+  color: #fff;
+  background: var(--rose);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.step:hover:not(:disabled) { background: var(--rose-deep); transform: scale(1.06); }
+.step:disabled { background: #e4cfd6; cursor: not-allowed; }
+
 .tally { margin: -0.25rem 0 1.1rem; font-size: 0.95rem; font-weight: 700; color: var(--muted); }
 .tally--ok { color: var(--ok); }
 .tally--off { color: var(--error); }
@@ -317,6 +360,53 @@ input:focus, select:focus, textarea:focus {
 .error-summary a { color: var(--error); font-weight: 600; }
 
 .submit-error { margin: 0 0 1rem; padding: 0.8rem 1rem; border-radius: 14px; background: #fdeef1; color: var(--error); font-weight: 700; }
+.submit-error p { margin: 0; }
+.submit-error .success-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; }
+
+.link-button { padding: 0.4rem 0 0; color: var(--error); }
+
+/* ---------- Change an existing RSVP ---------- */
+.change-panel { margin: -0.75rem 0 1.5rem; text-align: center; }
+.change-intro { margin: 0; color: var(--muted); }
+.change-intro .success-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; }
+
+.link-button { padding: 0.35rem 0.25rem; }
+.lookup {
+  margin-top: 0.75rem;
+  padding: 1.1rem 1.2rem 0.1rem;
+  border-radius: 18px;
+  background: var(--butter-soft);
+  text-align: left;
+  animation: unfold 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lookup-row { display: flex; gap: 0.6rem; }
+.lookup-row input { flex: 1; min-width: 0; }
+.lookup-button {
+  flex: none;
+  min-height: 48px;
+  padding: 0 1.2rem;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 800;
+  color: #fff;
+  background: var(--rose);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.lookup-button:hover { background: var(--rose-deep); }
+.lookup-button:disabled { cursor: progress; filter: saturate(0.6); }
+.editing-banner {
+  padding: 0.9rem 1.1rem 0.5rem;
+  border-radius: 16px;
+  background: var(--sage-soft);
+  border-left: 5px solid var(--ok);
+  text-align: left;
+}
+.editing-banner p { margin: 0; font-weight: 700; color: var(--ok); }
+.editing-banner .success-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; }
+
+.link-button { padding: 0.35rem 0; }
 
 .submit {
   position: relative;
@@ -353,6 +443,8 @@ input:focus, select:focus, textarea:focus {
 .success-art .heart { fill: #e28fa6; animation: beat 1.4s ease-in-out infinite; transform-origin: center; }
 @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(1); } }
 
+.success-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25rem 1rem; }
+
 .link-button {
   font: inherit; font-weight: 700;
   color: var(--rose-deep);
@@ -372,6 +464,8 @@ input:focus, select:focus, textarea:focus {
 }
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
+  .lookup-row { flex-direction: column; }
+  .choices { grid-template-columns: 1fr; }
   .card::before { inset: 7px; }
   .party { padding: 1rem 1rem 0.1rem; }
 }

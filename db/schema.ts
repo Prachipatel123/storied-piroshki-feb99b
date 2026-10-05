@@ -13,6 +13,7 @@ export const rsvps = pgTable("rsvps", {
   comments: text(),
   emailSent: boolean("email_sent").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 export type Rsvp = typeof rsvps.$inferSelect;
