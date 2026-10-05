@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Baby Shower for Nidhi &amp; Yakin · 15 November 2026</title>
-    <meta name="description" content="You're invited to celebrate the upcoming arrival of Nidhi and Yakin's little one. Sunday, 15 November 2026, 10 AM onwards at North Dumfries Community Complex. Please RSVP by 19 October 2026." />
+    <meta name="description" content="Please join us for a baby shower celebrating Nidhi and Yakin and the upcoming arrival of their little one. Sunday, 15 November 2026, 10 AM onwards at North Dumfries Community Complex. Please RSVP by 19 October 2026." />
     <meta name="theme-color" content="#fdf6f0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,14 +31,14 @@
           <svg class="balloon balloon--sage" viewBox="0 0 60 130"><path class="string" d="M30 74c6 12-6 22 0 36s-4 18 0 20" /><ellipse cx="30" cy="36" rx="26" ry="32" /><path d="M26 67h8l-4 7Z" /><ellipse class="shine" cx="20" cy="24" rx="5" ry="9" /></svg>
         </div>
 
-        <p class="eyebrow reveal">You're invited to a</p>
+        <p class="eyebrow reveal">Please join us for a</p>
         <h1 class="reveal">
           <span class="title-script">Baby Shower</span>
-          <span class="title-for">for</span>
+          <span class="title-for">celebrating</span>
           <span class="title-names">Nidhi <span class="amp">&amp;</span> Yakin</span>
         </h1>
         <p class="invitation reveal">
-          Please join us to celebrate the upcoming arrival of our little one! Looking forward to welcoming you!
+          We look forward to welcoming you as we celebrate the upcoming arrival of our little one!
         </p>
 
         <ul class="details reveal" aria-label="Event details">
@@ -76,7 +76,25 @@
             <div class="card-head">
               <p class="eyebrow">Kindly reply by 19 October 2026</p>
               <h2 id="rsvp-title">Will you celebrate with us?</h2>
-              <p class="hint">Fields marked <span class="req" aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.</p>
+              <p class="hint" id="mode-hint">Fields marked <span class="req" aria-hidden="true">*</span><span class="visually-hidden">with an asterisk</span> are required.</p>
+            </div>
+
+            <div class="change-panel">
+              <p id="change-intro" class="change-intro">Already replied? <button type="button" class="link-button" id="change-open" aria-expanded="false" aria-controls="lookup-form">Change your RSVP</button></p>
+              <form id="lookup-form" class="lookup" novalidate hidden>
+                <div class="field">
+                  <label for="lookupPhone">Phone number you RSVP'd with</label>
+                  <div class="lookup-row">
+                    <input id="lookupPhone" name="lookupPhone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" aria-describedby="lookupPhone-error" />
+                    <button type="submit" class="lookup-button" id="lookup-submit">Find my RSVP</button>
+                  </div>
+                  <p class="error" id="lookupPhone-error" role="alert"></p>
+                </div>
+              </form>
+              <div id="editing-banner" class="editing-banner" hidden>
+                <p>You're changing your existing RSVP. Update anything below, then save.</p>
+                <button type="button" class="link-button" id="edit-cancel">Cancel and start a new RSVP</button>
+              </div>
             </div>
 
             <div id="error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
@@ -92,44 +110,54 @@
                   <p class="error" id="name-error"></p>
                 </div>
 
-                <div class="field">
-                  <label for="email">Email <span class="req" id="email-req" aria-hidden="true">*</span><span class="optional" id="email-opt" hidden>(optional)</span></label>
-                  <input id="email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" required aria-required="true" aria-describedby="email-help email-error" />
-                  <p class="help" id="email-help">We'll email you a confirmation with the event details.</p>
-                  <p class="error" id="email-error"></p>
-                </div>
-
-                <div class="field">
-                  <label for="phone">Phone <span class="optional">(optional)</span></label>
-                  <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" aria-describedby="phone-help phone-error" />
-                  <p class="help" id="phone-help">In case we need to reach you on the day.</p>
+                <div class="field field--full">
+                  <label for="phone">Phone number <span class="req" aria-hidden="true">*</span></label>
+                  <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" required aria-required="true" aria-describedby="phone-help phone-error" />
+                  <p class="help" id="phone-help">We use this to find your RSVP if you need to change it later, and to reach you on the day.</p>
                   <p class="error" id="phone-error"></p>
                 </div>
 
-                <div class="field field--full">
-                  <label for="guestCount">How many guests will attend, including you? <span class="req" aria-hidden="true">*</span></label>
-                  <select id="guestCount" name="guestCount" required aria-required="true" aria-describedby="guestCount-error">
-                    <option value="">Please choose…</option>
-                  </select>
-                  <p class="error" id="guestCount-error"></p>
-                </div>
               </div>
 
+              <fieldset id="attending" class="attending" aria-describedby="attending-error">
+                <legend>Will you be able to join us? <span class="req" aria-hidden="true">*</span></legend>
+                <div class="choices">
+                  <label class="choice">
+                    <input type="radio" id="attending-yes" name="attending" value="yes" />
+                    <span>Yes, I'll be there!</span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" id="attending-no" name="attending" value="no" />
+                    <span>Sorry, I can't make it</span>
+                  </label>
+                </div>
+                <p class="error" id="attending-error"></p>
+              </fieldset>
+
               <fieldset id="party" class="party" hidden aria-describedby="tally">
-                <legend>Who's coming?</legend>
+                <legend>Who's coming, including you?</legend>
                 <div class="grid">
                   <div class="field">
-                    <label for="adults">Adults <span class="req" aria-hidden="true">*</span></label>
-                    <select id="adults" name="adults" required aria-required="true" aria-describedby="adults-error"></select>
+                    <label for="adults" id="adults-label">Adults</label>
+                    <div class="stepper" role="group" aria-labelledby="adults-label">
+                      <button type="button" class="step" data-target="adults" data-delta="-1" aria-label="Remove an adult">&minus;</button>
+                      <input id="adults" name="adults" type="number" inputmode="numeric" min="0" value="1" aria-describedby="adults-error" />
+                      <button type="button" class="step" data-target="adults" data-delta="1" aria-label="Add an adult">+</button>
+                    </div>
                     <p class="error" id="adults-error"></p>
                   </div>
                   <div class="field">
-                    <label for="children">Children <span class="req" aria-hidden="true">*</span></label>
-                    <select id="children" name="children" required aria-required="true" aria-describedby="children-error"></select>
+                    <label for="children" id="children-label">Children</label>
+                    <div class="stepper" role="group" aria-labelledby="children-label">
+                      <button type="button" class="step" data-target="children" data-delta="-1" aria-label="Remove a child">&minus;</button>
+                      <input id="children" name="children" type="number" inputmode="numeric" min="0" value="0" aria-describedby="children-error" />
+                      <button type="button" class="step" data-target="children" data-delta="1" aria-label="Add a child">+</button>
+                    </div>
                     <p class="error" id="children-error"></p>
                   </div>
                 </div>
                 <p id="tally" class="tally" aria-live="polite"></p>
+                <p class="error" id="guestCount-error"></p>
 
                 <div class="field field--full">
                   <label for="attendeeNames">Names of attendees <span class="optional">(optional)</span></label>
@@ -146,7 +174,10 @@
                 <p class="error" id="comments-error"></p>
               </div>
 
-              <p id="submit-error" class="submit-error" role="alert" hidden></p>
+              <div id="submit-error" class="submit-error" role="alert" hidden>
+                <p id="submit-error-text"></p>
+                <button type="button" class="link-button" id="duplicate-change" hidden>Change my existing RSVP</button>
+              </div>
 
               <button type="submit" class="submit" id="submit">
                 <span class="submit-label">Submit RSVP</span>
@@ -161,7 +192,10 @@
             </div>
             <h2 id="success-title" tabindex="-1"></h2>
             <p id="success-message"></p>
-            <button type="button" class="link-button" id="again">Submit another RSVP</button>
+            <div class="success-actions">
+              <button type="button" class="link-button" id="change-this">Change this RSVP</button>
+              <button type="button" class="link-button" id="again">Submit another RSVP</button>
+            </div>
           </div>
         </div>
       </section>

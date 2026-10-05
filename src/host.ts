@@ -12,8 +12,8 @@ interface Rsvp {
   children: number;
   attendeeNames: string | null;
   comments: string | null;
-  emailSent: boolean;
   createdAt: string;
+  updatedAt: string | null;
 }
 
 const STORAGE_KEY = "host-password";
@@ -72,8 +72,9 @@ function render() {
       badge.className = `badge ${r.attending ? "badge--yes" : "badge--no"}`;
       badge.textContent = r.attending ? "Attending" : "Can't make it";
       status.append(badge);
-      const contact = [r.email, r.phone].filter(Boolean).join("\n");
-      const emailNote = r.attending && r.email ? (r.emailSent ? "\n✓ confirmation sent" : "\n✗ confirmation not sent") : "";
+      // Older replies may still have an email address from before the field was removed.
+      const contact = [r.phone, r.email].filter(Boolean).join("\n");
+      const received = fmtDate(r.createdAt) + (r.updatedAt ? `\nChanged ${fmtDate(r.updatedAt)}` : "");
       tr.append(
         cell(r.name, "strong"),
         status,
@@ -81,9 +82,9 @@ function render() {
         cell(r.attending ? String(r.adults) : "–", "num"),
         cell(r.attending ? String(r.children) : "–", "num"),
         cell(r.attendeeNames ?? "", "wrap"),
-        cell(contact + emailNote, "wrap"),
+        cell(contact, "wrap"),
         cell(r.comments ?? "", "wrap"),
-        cell(fmtDate(r.createdAt), "nowrap"),
+        cell(received, "nowrap"),
       );
       return tr;
     }),
@@ -156,7 +157,7 @@ $("logout").addEventListener("click", () => {
 });
 
 $("export").addEventListener("click", () => {
-  const header = ["Name", "Status", "Guests", "Adults", "Children", "Attendee names", "Email", "Phone", "Confirmation email sent", "Comments", "Received"];
+  const header = ["Name", "Status", "Guests", "Adults", "Children", "Attendee names", "Phone", "Email", "Comments", "Received", "Last changed"];
   const esc = (v: string | number) => {
     let s = String(v);
     // Neutralise spreadsheet formulas in guest-provided text (plain phone numbers are left alone).
@@ -166,8 +167,8 @@ $("export").addEventListener("click", () => {
   const lines = rows.map((r) =>
     [
       r.name, r.attending ? "Attending" : "Can't make it", r.guestCount, r.adults, r.children,
-      r.attendeeNames ?? "", r.email ?? "", r.phone ?? "", r.emailSent ? "Yes" : "No",
-      r.comments ?? "", new Date(r.createdAt).toISOString(),
+      r.attendeeNames ?? "", r.phone ?? "", r.email ?? "",
+      r.comments ?? "", new Date(r.createdAt).toISOString(), r.updatedAt ? new Date(r.updatedAt).toISOString() : "",
     ].map(esc).join(","),
   );
   const blob = new Blob(["﻿" + [header.join(","), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
